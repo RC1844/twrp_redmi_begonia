@@ -1,5 +1,8 @@
 import /microtrust_begonia.rc
 
+on early-init
+    start adbd
+
 on init
     # Create a more standard /dev/block layout for our scripts
     symlink /dev/block/platform/bootdevice /dev/block/bootdevice
@@ -24,6 +27,7 @@ on fs
     symlink /mnt/vendor/nvcfg /vendor/nvcfg
     symlink /mnt/vendor/nvdata /vendor/nvdata
 
+on property:ro.crypto.state=encrypted && property:ro.crypto.type=file
     install_keyring
 
 on post-fs
@@ -42,12 +46,14 @@ service keystore /system/bin/keystore /tmp/misc/keystore
     seclabel u:r:recovery:s0
 
 service gatekeeper-1-0 /vendor/bin/hw/android.hardware.gatekeeper@1.0-service
+    interface android.hardware.gatekeeper@1.0::IGatekeeper default
     user root
     group root
     disabled
     seclabel u:r:recovery:s0
 
 service keymaster-4-0-beanpod /vendor/bin/hw/android.hardware.keymaster@4.0-service.beanpod
+    interface android.hardware.keymaster@4.0::IKeymasterDevice default
     user root
     group root drmrpc
     disabled
@@ -58,7 +64,6 @@ on property:hwservicemanager.ready=true
     start teei_daemon
     write /proc/bootprof "start teei_daemon end (on fs)"
     start keymaster-4-0-beanpod
-    exec_start wait_for_keymaster
     start gatekeeper-1-0
 
 on property:ro.crypto.state=unsupported
