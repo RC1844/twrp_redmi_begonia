@@ -29,7 +29,7 @@ TARGET_2ND_ARCH_VARIANT := armv8-a
 TARGET_2ND_CPU_ABI := armeabi-v7a
 TARGET_2ND_CPU_ABI2 := armeabi
 TARGET_2ND_CPU_VARIANT := generic
-TARGET_2ND_CPU_VARIANT_RUNTIME := cortex-a76
+TARGET_2ND_CPU_VARIANT_RUNTIME := cortex-a55
 
 # Bootloader
 TARGET_BOOTLOADER_BOARD_NAME := begonia
@@ -121,7 +121,7 @@ BOARD_SUPPRESS_SECURE_ERASE := true
 
 # File systems
 TARGET_USERIMAGES_USE_EXT4 := true
-# TARGET_USERIMAGES_USE_F2FS := true
+TARGET_USERIMAGES_USE_F2FS := true
 
 # Workaround for error copying vendor files to recovery ramdisk
 TARGET_COPY_OUT_VENDOR := vendor
