@@ -9,10 +9,7 @@ on init
 
 on fs
     mkdir /mnt/vendor 0700 root root
-    mkdir /persist 0700 root root
-    mount ext4 /dev/block/platform/bootdevice/by-name/persist /persist
     mount ext4 /dev/block/platform/bootdevice/by-name/vendor /vendor ro barrier=1
-    symlink /persist /mnt/vendor/persist
 
     # hwservicemanager is a "default" class service, so it is only started by
     # "class_start default" in on boot - i.e. after the recovery process has
