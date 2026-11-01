@@ -68,7 +68,7 @@ service gatekeeper-1-0 /vendor/bin/hw/android.hardware.gatekeeper@1.0-service
     seclabel u:r:recovery:s0
     # Fallback only: enable this when the vendor gatekeeper HAL cannot resolve
     # symbols on its own.
-    #env LD_PRELOAD /system/lib64/libshim_beanpod.so
+    #setenv LD_PRELOAD /system/lib64/libshim_beanpod.so
 
 service keymaster-4-0-beanpod /vendor/bin/hw/android.hardware.keymaster@4.0-service.beanpod
     interface android.hardware.keymaster@4.0::IKeymasterDevice default
@@ -77,8 +77,9 @@ service keymaster-4-0-beanpod /vendor/bin/hw/android.hardware.keymaster@4.0-serv
     disabled
     seclabel u:r:recovery:s0
     # Prefer the vendor copy of libkeymaster4 over the AOSP one relinked into
-    # /system/lib64.
-    env LD_LIBRARY_PATH /vendor/lib64:/vendor/lib64/hw:/system/lib64
+    # /system/lib64. Android 11 init renamed this service option from "env" to
+    # "setenv" (host_init_verifier rejects "env" as an invalid keyword).
+    setenv LD_LIBRARY_PATH /vendor/lib64:/vendor/lib64/hw:/system/lib64
     # Fallback only: enable this when the vendor keymaster HAL cannot resolve
     # symbols on its own.
-    #env LD_PRELOAD /system/lib64/libshim_beanpod.so
+    #setenv LD_PRELOAD /system/lib64/libshim_beanpod.so
