@@ -19,15 +19,16 @@ on fs
     mount ext4 /dev/block/platform/bootdevice/by-name/nvdata /mnt/vendor/nvdata
     mount ext4 /dev/block/platform/bootdevice/by-name/nvcfg /mnt/vendor/nvcfg
     mount ext4 /dev/block/platform/bootdevice/by-name/persist /mnt/vendor/persist
-    symlink /mnt/vendor/protect_f /vendor/protect_f
-    symlink /mnt/vendor/protect_s /vendor/protect_s
-    symlink /mnt/vendor/nvcfg /vendor/nvcfg
-    symlink /mnt/vendor/nvdata /vendor/nvdata
-
+    
     # Use the HALs, libraries and TAs from the real vendor partition instead of
     # the copies shipped in the ramdisk. The ramdisk copies stay in place and
     # are used automatically when this mount fails (fallback).
     mount ext4 /dev/block/platform/bootdevice/by-name/vendor /vendor ro barrier=1
+
+    symlink /mnt/vendor/protect_f /vendor/protect_f
+    symlink /mnt/vendor/protect_s /vendor/protect_s
+    symlink /mnt/vendor/nvcfg /vendor/nvcfg
+    symlink /mnt/vendor/nvdata /vendor/nvdata
 
     # hwservicemanager is a "default" class service, so it is only started by
     # "class_start default" in on boot - i.e. after the recovery process has
