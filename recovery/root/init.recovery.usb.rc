@@ -1,8 +1,9 @@
 on early-init
     write /sys/module/musb_hdrc/parameters/kernel_init_done 1
-
-on property:hwservicemanager.ready=true
-    setprop sys.usb.config adb
+    # The UDC must be known before adbd sets sys.usb.ffs.ready; that can happen
+    # as early as "on fs", which is earlier than "on boot" where it used to be
+    # set. An empty UDC made the gadget never bind, so adb was never visible.
+    setprop sys.usb.controller musb-hdrc
 
 on boot
     setprop sys.usb.configfs 1
@@ -42,6 +43,13 @@ on fs
     symlink /config/usb_gadget/g1/configs/b.1 /config/usb_gadget/g1/os_desc/b.1
     mount functionfs adb /dev/usb-ffs/adb uid=2000,gid=2000
     write /sys/class/android_usb/android0/f_ffs/aliases adb
+    # Start adb deterministically here, after functionfs is mounted. Relying on
+    # the ro.debuggable trigger in the stock init.rc starts adbd before this
+    # mount exists, and the property never changes again so it never retries.
+    setprop sys.usb.configfs 1
+    setprop sys.usb.ffs.aio_compat 1
+    setprop sys.usb.config adb
+    start adbd
 
 on property:sys.usb.config=none
     write /config/usb_gadget/g1/UDC "none"

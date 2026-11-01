@@ -1,8 +1,5 @@
 import /microtrust_begonia.rc
 
-on early-init
-    start adbd
-
 on init
     # Create a more standard /dev/block layout for our scripts
     symlink /dev/block/platform/bootdevice /dev/block/bootdevice
@@ -27,10 +24,28 @@ on fs
     symlink /mnt/vendor/nvcfg /vendor/nvcfg
     symlink /mnt/vendor/nvdata /vendor/nvdata
 
+    # Use the HALs, libraries and TAs from the real vendor partition instead of
+    # the copies shipped in the ramdisk. The ramdisk copies stay in place and
+    # are used automatically when this mount fails (fallback).
+    mount ext4 /dev/block/platform/bootdevice/by-name/vendor /vendor ro barrier=1
+
+    # hwservicemanager is a "default" class service, so it is only started by
+    # "class_start default" in on boot - i.e. after the recovery process has
+    # already been forked. Start it here, once /vendor (and its vintf manifest)
+    # is mounted, so the HIDL HALs below have a service manager to talk to.
+    start hwservicemanager
+
+    # teei_daemon talks to /dev/teei_client only and has no HIDL dependency.
+    start teei_daemon
+
+# keymaster/gatekeeper register with hwservicemanager, so they must not be
+# started before it is serving. hwservicemanager sets this property when ready.
+on property:hwservicemanager.ready=true
+    start keymaster-4-0-beanpod
+    start gatekeeper-1-0
+
 on property:ro.crypto.state=encrypted && property:ro.crypto.type=file
     install_keyring
-
-on post-fs
 
 service keystore_auth /system/bin/keystore_auth
     oneshot
@@ -51,6 +66,9 @@ service gatekeeper-1-0 /vendor/bin/hw/android.hardware.gatekeeper@1.0-service
     group root
     disabled
     seclabel u:r:recovery:s0
+    # Fallback only: enable this when the vendor gatekeeper HAL cannot resolve
+    # symbols on its own.
+    #env LD_PRELOAD /system/lib64/libshim_beanpod.so
 
 service keymaster-4-0-beanpod /vendor/bin/hw/android.hardware.keymaster@4.0-service.beanpod
     interface android.hardware.keymaster@4.0::IKeymasterDevice default
@@ -58,31 +76,9 @@ service keymaster-4-0-beanpod /vendor/bin/hw/android.hardware.keymaster@4.0-serv
     group root drmrpc
     disabled
     seclabel u:r:recovery:s0
-
-on property:hwservicemanager.ready=true
-    write /proc/bootprof "start teei_daemon (on fs)"
-    start teei_daemon
-    write /proc/bootprof "start teei_daemon end (on fs)"
-    start keymaster-4-0-beanpod
-    start gatekeeper-1-0
-
-on property:ro.crypto.state=unsupported
-    stop teei_daemon
-    stop keymaster-4-0-beanpod
-    stop gatekeeper-1-0
-    stop servicemanager
-    stop hwservicemanager
-
-on property:ro.crypto.state=unencrypted
-    stop teei_daemon
-    stop keymaster-4-0-beanpod
-    stop gatekeeper-1-0
-    stop servicemanager
-    stop hwservicemanager
-
-on property:twrp.decrypt.done=true
-    stop teei_daemon
-    stop keymaster-4-0-beanpod
-    stop gatekeeper-1-0
-    stop servicemanager
-    stop hwservicemanager
+    # Prefer the vendor copy of libkeymaster4 over the AOSP one relinked into
+    # /system/lib64.
+    env LD_LIBRARY_PATH /vendor/lib64:/vendor/lib64/hw:/system/lib64
+    # Fallback only: enable this when the vendor keymaster HAL cannot resolve
+    # symbols on its own.
+    #env LD_PRELOAD /system/lib64/libshim_beanpod.so

@@ -57,7 +57,11 @@ BOARD_PREBUILT_DTBIMAGE_DIR  := $(DEVICE_PATH)/prebuilt/dtb
 BOARD_INCLUDE_RECOVERY_DTBO := true
 BOARD_PREBUILT_DTBOIMAGE := $(DEVICE_PATH)/prebuilt/recovery_dtbo
 
-BOARD_KERNEL_CMDLINE := bootopt=64S3,32N2,64N2 androidboot.selinux=permissive
+# androidboot.hardware is mandatory: init exports ro.hardware from it before
+# loading prop.default, and ro.* is write-once. Without it ro.hardware becomes
+# "unknown", so /init.recovery.${ro.hardware}.rc is never imported and none of
+# the device services (vendor mount, keymaster/gatekeeper, teei) ever start.
+BOARD_KERNEL_CMDLINE := bootopt=64S3,32N2,64N2 androidboot.hardware=mt6785 androidboot.selinux=permissive
 BOARD_KERNEL_BASE := 0x40078000
 BOARD_KERNEL_PAGESIZE := 2048
 BOARD_PAGE_SIZE := 2048
